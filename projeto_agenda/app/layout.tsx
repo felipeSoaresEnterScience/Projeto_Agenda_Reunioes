@@ -4,6 +4,7 @@ import "./globals.css";
 
 // Importing the Components
 import NavBar from "../components/NavBar";
+import Footer from "../components/Footer";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -27,12 +28,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-br">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <NavBar />
         {children}
+        <Footer />
       </body>
     </html>
   );
