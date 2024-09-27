@@ -83,9 +83,68 @@ class UserService
             return response()->json([
                 'result' => true,
                 'token' => $token,
+                'user' => $user,
             ]);
         } catch (Exception $ex) {
             return $this->handleException($ex, 'Error authenticating user', 500);
+        }
+    }
+
+
+    /**
+     * Logout a user by invalidating their authentication token.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function logoutUser($user)
+    {
+        DB::beginTransaction();
+        try {
+            // Revoke all tokens of the user (for single device logout, you can specify the token)
+            $user->tokens()->delete();
+
+            DB::commit();
+            return response()->json([
+                'result' => true,
+                'message' => 'Logged out successfully',
+            ]);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->handleException($ex, 'Error during logout', 500);
+        }
+    }
+
+    /**
+     * Verify if a user's token is valid.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verifyUser($user)
+    {
+        DB::beginTransaction();
+        try {
+            // Check if the user still has a valid token
+            $tokenExists = $user->tokens()->where('revoked', false)->exists();
+
+            DB::commit();
+
+            if (!$tokenExists) {
+                return response()->json([
+                    'result' => false,
+                    'message' => 'Invalid or expired token',
+                ], 401);
+            }
+
+            return response()->json([
+                'result' => true,
+                'message' => 'User is authenticated',
+                'user' => $user,
+            ]);
+        } catch (Exception $ex) {
+            DB::rollBack();
+            return $this->handleException($ex, 'Error verifying user', 500);
         }
     }
 }

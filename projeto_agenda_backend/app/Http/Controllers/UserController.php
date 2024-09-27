@@ -6,6 +6,7 @@ use App\Services\UserService;
 use App\Traits\ErrorResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 class UserController extends Controller
@@ -87,5 +88,42 @@ class UserController extends Controller
         return $status === Password::RESET_LINK_SENT
             ? response()->json(['message' => 'Link de recuperação de senha enviado'], 200)
             : response()->json(['message' => 'Não foi possível enviar o link de recuperação'], 400);
+    }
+
+
+    /**
+     * Verify if the authenticated user is still valid.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verifyUser()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return $this->handleException(new \Exception('Usuário não autenticado'), 'Error message', 401);
+        }
+
+        $result = $this->userService->verifyUser($user);
+
+        return $result; // Response will be handled by the UserService
+    }
+
+    /**
+     * Logout the authenticated user.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function logout()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return $this->handleException(new \Exception('Usuário não autenticado'), 'Error message', 401);
+        }
+
+        $result = $this->userService->logoutUser($user);
+
+        return $result; // Response will be handled by the UserService
     }
 }

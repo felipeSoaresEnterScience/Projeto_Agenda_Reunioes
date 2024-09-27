@@ -1,3 +1,5 @@
+"use client";
+
 // src/context/AuthContext.jsx
 import React, {
   createContext,

@@ -15,10 +15,15 @@ import {
 } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 
+// Importing the useUser hook
+import useUser from "@/hooks/useUser";
+
 // importing interfaces
 import { FormErrors, FormData } from "../../types/formRegister";
 
 export default function RegisterPage() {
+  const { RegisterUser } = useUser();
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -47,14 +52,32 @@ export default function RegisterPage() {
   };
 
   // Manipulador de envio do formulário
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Valida o formulário antes de submeter
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+      setErrors(validationErrors); // Exibe erros de validação
     } else {
       setErrors({});
-      setSuccess("Registro realizado com sucesso!");
+
+      // Chama a função de registro do usuário
+      const result = await RegisterUser(
+        formData.name,
+        formData.email,
+        formData.password
+      );
+
+      if (result) {
+        setSuccess("Registro realizado com sucesso!"); // Mensagem de sucesso
+        setFormData({ name: "", email: "", password: "", confirmPassword: "" }); // Limpa os campos do formulário
+
+        // Redireciona para a página de login
+        window.location.href = "/login";
+      } else {
+        setErrors({ ...errors, form: "Erro ao registrar. Tente novamente." }); // Exibe erro se falhar
+      }
     }
   };
 
