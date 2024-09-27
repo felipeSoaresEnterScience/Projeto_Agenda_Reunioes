@@ -20,8 +20,8 @@ class UserService
      */
     public function findUserByEmail($email)
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
             $user = User::where('email', $email)->firstOrFail();
             DB::commit();
             return $user;
