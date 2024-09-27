@@ -39,8 +39,9 @@ class UserService
      */
     public function createUser($data)
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
+
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
