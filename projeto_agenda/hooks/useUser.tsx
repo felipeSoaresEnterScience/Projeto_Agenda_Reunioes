@@ -42,7 +42,7 @@ export default function useUser() {
       // Verifica se o resultado foi positivo
       if (result) {
         login(token, user); // Chama a função de login do contexto
-        window.location.href = "/"; // Redireciona para a home
+        window.location.href = "/dashboard"; // Redireciona para a home
         return true; // Retorna sucesso
       } else {
         throw new Error("Falha na autenticação. Verifique suas credenciais.");

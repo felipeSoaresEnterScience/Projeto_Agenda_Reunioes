@@ -3,11 +3,10 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 // Importing the Components
-import NavBar from "../components/NavBar";
-import Footer from "../components/Footer";
+import LayoutContent from "../components/LayoutContent";
 
-//Importing the Context
-import { AuthProvider } from "../context/AuthContext";
+// Importing the Context
+import { AuthProvider } from "../context/AuthContext"; // Contexto vem antes de ser usado
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -36,9 +35,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-full`}
       >
         <AuthProvider>
-          <NavBar />
-          <main className="flex-grow">{children}</main>
-          <Footer />
+          {/* Mova a lógica de autenticação para os componentes */}
+          <LayoutContent>{children}</LayoutContent>
         </AuthProvider>
       </body>
     </html>

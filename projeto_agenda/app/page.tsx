@@ -7,6 +7,9 @@ import { Calendar, Clock, Users, ArrowRight } from "lucide-react";
 // Importing the Components from the Shadcn UI
 import { Button } from "@/components/ui/button";
 
+// Importing the Components
+import NavBar from "@/components/NavBar";
+
 import {
   Card,
   CardHeader,
