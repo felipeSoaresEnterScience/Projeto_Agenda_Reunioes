@@ -1,3 +1,4 @@
+// app/agenda/page.tsx
 import AgendaClient from "../../components/agenda/AgendaClient";
 import { Event } from "@/types/Event";
 
@@ -8,6 +9,7 @@ const mockEvents: Event[] = [
 ];
 
 export default function AgendaPage() {
+  // Futuramente, aqui você buscará eventos do servidor
   // const events = await getEvents();
 
   return (
