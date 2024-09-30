@@ -34,6 +34,12 @@ export const WeekView: React.FC<WeekViewProps> = ({
     });
   };
 
+  const handleSlotClick = (day: Date, hour: number) => {
+    const selectedDate = new Date(day);
+    selectedDate.setHours(hour, 0, 0, 0);
+    onSlotSelect(selectedDate);
+  };
+
   return (
     <div className="grid grid-cols-8 gap-1">
       <div className="col-span-1"></div>
@@ -50,16 +56,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
             <div
               key={`${hour}-${dayIndex}`}
               className="border h-12 relative cursor-pointer hover:bg-gray-50"
-              onClick={() => {
-                const selectedDate = new Date(day);
-                selectedDate.setHours(hour);
-                onSlotSelect(selectedDate);
-              }}
+              onClick={() => handleSlotClick(day, hour)}
             >
               {getEventsForDayAndHour(day, hour).map((event) => (
                 <div
                   key={event.id}
-                  className="absolute top-0 left-0 right-0 bg-blue-100 text-xs p-1 overflow-hidden"
+                  className={cn(
+                    "absolute top-0 left-0 right-0 bg-blue-100 text-xs p-1 overflow-hidden"
+                  )}
                   style={{
                     height: `${((event.duration || 60) / 60) * 100}%`,
                   }}

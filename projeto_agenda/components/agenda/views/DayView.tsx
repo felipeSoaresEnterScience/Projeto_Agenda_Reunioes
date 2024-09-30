@@ -25,6 +25,12 @@ export const DayView: React.FC<DayViewProps> = ({
     });
   };
 
+  const handleSlotClick = (hour: number) => {
+    const selectedDate = new Date(date);
+    selectedDate.setHours(hour, 0, 0, 0);
+    onSlotSelect(selectedDate);
+  };
+
   return (
     <div className="grid grid-cols-1 gap-1">
       {hours.map((hour) => (
@@ -32,18 +38,16 @@ export const DayView: React.FC<DayViewProps> = ({
           <div className="w-16 text-right pr-2">{`${hour}:00`}</div>
           <div
             className="flex-grow relative h-16 cursor-pointer hover:bg-gray-50"
-            onClick={() => {
-              const selectedDate = new Date(date);
-              selectedDate.setHours(hour);
-              onSlotSelect(selectedDate);
-            }}
+            onClick={() => handleSlotClick(hour)}
           >
             {getEventsForHour(hour).map((event) => (
               <div
                 key={event.id}
-                className="absolute left-0 right-0 bg-blue-100 text-xs p-1 overflow-hidden rounded"
+                className={cn(
+                  "absolute left-0 right-0 bg-blue-100 text-xs p-1 overflow-hidden rounded",
+                  "top-0"
+                )}
                 style={{
-                  top: "0",
                   height: `${((event.duration || 60) / 60) * 100}%`,
                 }}
               >
