@@ -21,8 +21,6 @@ import useUser from "@/hooks/useUser";
 const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/agenda", label: "Agenda", icon: Calendar },
-  { href: "/reunioes", label: "Reuniões", icon: Users },
-  { href: "/contatos", label: "Contatos", icon: Contact },
 ];
 interface MenuItemProps {
   href: string;
