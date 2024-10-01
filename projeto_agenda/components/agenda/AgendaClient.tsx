@@ -23,6 +23,9 @@ import {
 } from "@/components/ui/select";
 import { Event } from "@/types/Event";
 import { AddEventModal } from "./AddEventModal";
+import { EditEventModal } from "./EditEventModal";
+import { DeleteEventModal } from "./DeleteEventModal";
+import { useEvent } from "@/hooks/useEvent";
 
 // Lazy load view components
 const MonthView = lazy(() =>
@@ -42,22 +45,26 @@ type ViewType = "month" | "week" | "day" | "list";
 
 const views: ViewType[] = ["month", "week", "day", "list"];
 
-interface AgendaClientProps {
-  initialEvents: Event[];
-}
-
-export default function AgendaClient({ initialEvents }: AgendaClientProps) {
+export default function AgendaClient() {
   const [activeView, setActiveView] = useState<ViewType>("month");
   const [date, setDate] = useState<Date>(new Date());
-  const [events, setEvents] = useState<Event[]>(initialEvents);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false); // Modal de adição
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Modal de edição
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Modal de exclusão
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
-  const [draggedEvent, setDraggedEvent] = useState<Event | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<{
-    start: Date;
-    end: Date;
-  } | null>(null);
+  const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
+  const [eventIdToDelete, setEventIdToDelete] = useState<string | null>(null);
   const router = useRouter();
+
+  const {
+    events,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    fetchEvents,
+    loading,
+    error,
+  } = useEvent();
 
   const handleDateChange = useCallback(
     (newDate: Date | undefined) => {
@@ -83,42 +90,75 @@ export default function AgendaClient({ initialEvents }: AgendaClientProps) {
     [date, router]
   );
 
-  const handleAddEvent = useCallback((event: Event) => {
-    setEvents((prevEvents) => [...prevEvents, event]);
-    setIsModalOpen(false);
-  }, []);
-
-  const handleSlotSelect = useCallback((slotDate: Date) => {
-    setSelectedSlot(slotDate);
-    setIsModalOpen(true);
-  }, []);
-
-  const handleEventDragStart = useCallback((event: Event) => {
-    setDraggedEvent(event);
-  }, []);
-
-  const handleEventDragEnd = useCallback(
-    (newStart: Date, newEnd: Date) => {
-      if (draggedEvent) {
-        const updatedEvent = {
-          ...draggedEvent,
-          start: newStart.toISOString(),
-          end: newEnd.toISOString(),
-        };
-        setEvents((prevEvents) =>
-          prevEvents.map((event) =>
-            event.id === draggedEvent.id ? updatedEvent : event
-          )
-        );
-        setDraggedEvent(null);
+  // Adicionar evento
+  const handleAddEvent = useCallback(
+    async (event: Event) => {
+      try {
+        await addEvent(event); // Chama a função do hook
+        await fetchEvents(); // Atualiza a lista de eventos
+        setIsAddModalOpen(false); // Fecha o modal de adição
+      } catch (error) {
+        console.error("Erro ao adicionar evento:", error);
       }
     },
-    [draggedEvent]
+    [addEvent, fetchEvents]
   );
 
-  const handlePeriodSelect = useCallback((start: Date, end: Date) => {
-    setSelectedPeriod({ start, end });
-    setIsModalOpen(true);
+  // Editar evento
+  const handleUpdateEvent = useCallback(
+    async (event: Event) => {
+      try {
+        await updateEvent(event.id.toString(), event); // Chama a função de atualização do hook
+        await fetchEvents(); // Atualiza a lista de eventos
+        setIsEditModalOpen(false);
+      } catch (error) {
+        console.error("Erro ao atualizar evento:", error);
+      }
+    },
+    [updateEvent, fetchEvents]
+  );
+
+  // Deletar evento
+  const handleDeleteEvent = useCallback(
+    async (eventId: string) => {
+      try {
+        await deleteEvent(eventId); // Chama a função de deletar do hook
+        await fetchEvents(); // Atualiza a lista de eventos
+        setIsDeleteModalOpen(false); // Fecha o modal de exclusão
+      } catch (error) {
+        console.error("Erro ao deletar evento:", error);
+      }
+    },
+    [deleteEvent, fetchEvents]
+  );
+
+  // Selecionar slot para adicionar evento
+  const handleSlotSelect = useCallback((slotDate: Date) => {
+    // Configurando a data e a hora selecionada ao clicar em um dia ou hora no calendário
+    setSelectedSlot(slotDate);
+    setIsAddModalOpen(true); // Abre o modal de adição
+  }, []);
+
+  // Clique em um evento para editar
+  const handleEventClick = useCallback((event: Event) => {
+    setEventToEdit(event);
+    setIsEditModalOpen(true); // Abre o modal de edição
+  }, []);
+
+  // Abrir modal de exclusão de evento
+  const handleDeleteEventClick = useCallback((eventId: string) => {
+    setEventIdToDelete(eventId);
+    setIsDeleteModalOpen(true); // Abre o modal de exclusão
+  }, []);
+
+  // Fechar todos os modais
+  const handleModalClose = useCallback(() => {
+    setIsAddModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDeleteModalOpen(false);
+    setEventToEdit(null);
+    setSelectedSlot(null);
+    setEventIdToDelete(null);
   }, []);
 
   const ViewIcon = useCallback(({ view }: { view: ViewType }) => {
@@ -138,15 +178,6 @@ export default function AgendaClient({ initialEvents }: AgendaClientProps) {
   const years = useMemo(
     () =>
       Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i),
-    []
-  );
-
-  const monthOptions = useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, i) => ({
-        value: i.toString(),
-        label: new Date(0, i).toLocaleString("default", { month: "long" }),
-      })),
     []
   );
 
@@ -232,7 +263,7 @@ export default function AgendaClient({ initialEvents }: AgendaClientProps) {
               </Button>
             </div>
             <div className="flex items-center space-x-4">
-              <Button onClick={() => setIsModalOpen(true)}>
+              <Button onClick={() => setIsAddModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Adicionar Evento
               </Button>
               <Tabs
@@ -263,47 +294,70 @@ export default function AgendaClient({ initialEvents }: AgendaClientProps) {
               className="overflow-x-auto"
             >
               <div className="min-w-[800px]">
-                {activeView === "month" && (
-                  <MonthView
-                    date={date}
-                    events={events}
-                    onSlotSelect={(day) =>
-                      handleSlotSelect(new Date(day.setHours(9, 0, 0, 0)))
-                    }
-                  />
-                )}
-                {activeView === "week" && (
-                  <WeekView
-                    date={date}
-                    events={events}
-                    onSlotSelect={(slotDate: Date) => {
-                      handleSlotSelect(slotDate);
-                    }}
-                  />
-                )}
-                {activeView === "day" && (
-                  <DayView
-                    date={date}
-                    events={events}
-                    onSlotSelect={(slotDate: Date) => {
-                      handleSlotSelect(slotDate);
-                    }}
-                  />
-                )}
-                {activeView === "list" && (
-                  <ListView events={events} onSlotSelect={handleSlotSelect} />
-                )}
+                <Suspense fallback={<div>Carregando...</div>}>
+                  {activeView === "month" && (
+                    <MonthView
+                      date={date}
+                      events={events}
+                      onSlotSelect={(day) =>
+                        handleSlotSelect(new Date(day.setHours(9, 0, 0, 0)))
+                      }
+                      onEventClick={handleEventClick}
+                      onDeleteEventClick={handleDeleteEventClick} // Passando função para deletar
+                    />
+                  )}
+                  {activeView === "week" && (
+                    <WeekView
+                      date={date}
+                      events={events}
+                      onSlotSelect={handleSlotSelect}
+                      onEventClick={handleEventClick}
+                      onDeleteEventClick={handleDeleteEventClick} // Passando função para deletar
+                    />
+                  )}
+                  {activeView === "day" && (
+                    <DayView
+                      date={date}
+                      events={events}
+                      onSlotSelect={handleSlotSelect}
+                      onEventClick={handleEventClick}
+                      onDeleteEventClick={handleDeleteEventClick} // Passando função para deletar
+                    />
+                  )}
+                  {activeView === "list" && (
+                    <ListView
+                      events={events}
+                      onSlotSelect={handleSlotSelect}
+                      onEventClick={handleEventClick}
+                      onDeleteEventClick={handleDeleteEventClick} // Passando função para deletar
+                    />
+                  )}
+                </Suspense>
               </div>
             </motion.div>
           </AnimatePresence>
         </CardContent>
       </Card>
+      {/* Modal de Adição */}
       <AddEventModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isAddModalOpen}
+        onClose={handleModalClose}
         onAddEvent={handleAddEvent}
-        initialDate={selectedSlot || date}
-        activeView={activeView}
+        initialDate={selectedSlot || date} // Selecione o slot ou use a data atual
+      />
+      {/* Modal de Edição */}
+      <EditEventModal
+        isOpen={isEditModalOpen}
+        onClose={handleModalClose}
+        onUpdateEvent={handleUpdateEvent}
+        eventToEdit={eventToEdit}
+      />
+      {/* Modal de Exclusão */}
+      <DeleteEventModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleModalClose}
+        onDeleteEvent={handleDeleteEvent}
+        eventId={eventIdToDelete}
       />
     </>
   );

@@ -1,3 +1,5 @@
+// /components/agenda/EditEventModal.tsx
+
 import React, { useState, useEffect } from "react";
 import { Event } from "@/types/Event";
 import {
@@ -10,40 +12,43 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { format, addMinutes, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 
-interface AddEventModalProps {
+interface EditEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddEvent: (event: Event) => void;
-  initialDate: Date;
+  onUpdateEvent: (event: Event) => void;
+  eventToEdit: Event | null;
 }
 
-export const AddEventModal: React.FC<AddEventModalProps> = ({
+export const EditEventModal: React.FC<EditEventModalProps> = ({
   isOpen,
   onClose,
-  onAddEvent,
-  initialDate,
+  onUpdateEvent,
+  eventToEdit,
 }) => {
   const [eventName, setEventName] = useState("");
-  const [eventDate, setEventDate] = useState(initialDate);
-  const [startTime, setStartTime] = useState(""); // Hora de início
-  const [endTime, setEndTime] = useState(""); // Hora de término
+  const [eventDate, setEventDate] = useState<Date | null>(null);
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [eventDescription, setEventDescription] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Preenche os campos com base no initialDate quando o modal é aberto
   useEffect(() => {
-    if (initialDate) {
-      setEventDate(initialDate); // Preencher a data
-      setStartTime(format(initialDate, "HH:mm")); // Preencher hora de início
-      setEndTime(format(addMinutes(initialDate, 60), "HH:mm")); // Definir a hora de término uma hora depois
+    if (eventToEdit) {
+      setEventName(eventToEdit.title);
+      setEventDate(parseISO(eventToEdit.start));
+      setStartTime(format(parseISO(eventToEdit.start), "HH:mm"));
+      setEndTime(format(parseISO(eventToEdit.end), "HH:mm"));
+      setEventDescription(eventToEdit.description || "");
+      setCategory(eventToEdit.category || null);
     }
-  }, [initialDate]);
+  }, [eventToEdit]);
 
-  // Submissão do formulário para adicionar um evento
   const handleSubmit = async () => {
+    if (!eventDate) return;
+
     const [startHours, startMinutes] = startTime.split(":").map(Number);
     const [endHours, endMinutes] = endTime.split(":").map(Number);
 
@@ -53,37 +58,22 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
     const endDateTime = new Date(eventDate);
     endDateTime.setHours(endHours, endMinutes);
 
-    const duration =
-      (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60);
-
-    const newEvent: Event = {
-      id: Math.random(),
+    const updatedEvent: Event = {
+      ...eventToEdit!,
       title: eventName,
       start: startDateTime.toISOString(),
       end: endDateTime.toISOString(),
       description: eventDescription,
-      duration: duration,
-      date: startDateTime.toISOString().split("T")[0],
       category: category,
-      user_id: 5, // Supondo que o `user_id` seja 5 para novos eventos
-      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
     setIsLoading(true);
     try {
-      await onAddEvent(newEvent); // Adicionar novo evento
-      // Limpar os campos do formulário após adicionar
-      setEventName("");
-      setEventDate(initialDate);
-      setStartTime("");
-      setEndTime("");
-      setEventDescription("");
-      setCategory(null);
-
+      await onUpdateEvent(updatedEvent);
       onClose();
     } catch (error) {
-      console.error("Erro ao adicionar evento:", error);
+      console.error("Erro ao atualizar evento:", error);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +83,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Adicionar Evento</DialogTitle>
+          <DialogTitle>Editar Evento</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <Input
@@ -103,7 +93,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
           />
           <Input
             type="date"
-            value={format(eventDate, "yyyy-MM-dd")}
+            value={eventDate ? format(eventDate, "yyyy-MM-dd") : ""}
             onChange={(e) => setEventDate(parseISO(e.target.value))}
           />
           <div className="flex space-x-2">
@@ -132,7 +122,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
         </div>
         <DialogFooter>
           <Button onClick={handleSubmit} variant="default" disabled={isLoading}>
-            {isLoading ? "Salvando..." : "Adicionar"}
+            {isLoading ? "Salvando..." : "Salvar"}
           </Button>
           <Button onClick={onClose} variant="outline">
             Cancelar

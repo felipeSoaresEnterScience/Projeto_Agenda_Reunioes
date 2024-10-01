@@ -1,21 +1,15 @@
-// app/agenda/page.tsx
-import AgendaClient from "../../components/agenda/AgendaClient";
-import { Event } from "@/types/Event";
+// /app/agenda/page.tsx
 
-// Dados mockados para simular eventos
-const mockEvents: Event[] = [
-  { id: "1", title: "Reunião de equipe", date: "2024-03-15" },
-  { id: "2", title: "Entrega do projeto", date: "2024-03-20" },
-];
+"use client";
+
+import React from "react";
+import AgendaClient from "@/components/agenda/AgendaClient";
 
 export default function AgendaPage() {
-  // Futuramente, aqui você buscará eventos do servidor
-  // const events = await getEvents();
-
   return (
     <div className="container mx-auto p-4 space-y-4">
       <h1 className="text-3xl font-bold">Agenda</h1>
-      <AgendaClient initialEvents={mockEvents} />
+      <AgendaClient />
     </div>
   );
 }
